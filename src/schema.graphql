@@ -3,5 +3,5 @@ type Query {
 }
 
 type Mutation {
-  register(email: String!, password: String!): Boolean
+  registerUser(email: String!, password: String!): Boolean
 }
