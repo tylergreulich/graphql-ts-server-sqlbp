@@ -1,15 +1,14 @@
 import {
   Entity,
   Column,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   BeforeInsert,
   BaseEntity
 } from 'typeorm';
-import * as uuidv4 from 'uuid/v4';
 
 @Entity('users')
 export class User extends BaseEntity {
-  @PrimaryColumn('uuid')
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column('varchar', { length: 255 })
@@ -19,9 +18,4 @@ export class User extends BaseEntity {
   // NOTE: You can't define the length yourself. Use 'varchar' for that.
   @Column('text')
   password: string;
-
-  @BeforeInsert()
-  addId() {
-    this.id = uuidv4();
-  }
 }

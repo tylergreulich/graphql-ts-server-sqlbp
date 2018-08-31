@@ -1,0 +1,51 @@
+# import Error from '../../shared.graphql'
+
+type Mutation {
+  loginUser(email: String!, password: String!): [Error!]
+}
+
+type User {
+  _id: String!
+  username: String!
+  email: String!
+  hasChannel: Boolean!
+  isAdmin: Boolean!
+}
+
+# type Channel {
+#   _id: String!
+#   channelOwner: User!
+#   name: String!
+#   description: String!
+#   uploads: [Video!]
+#   playlists: [Playlist!]
+#   subscribers: Int!
+#   banner: String!
+#   avatar: String!
+# }
+
+# type Video {
+#   _id: String!
+#   title: String!
+#   description: String!
+#   videoOwner: Channel!
+#   comments: [Comment!]
+#   likes: Int!
+#   dislikes: Int!
+#   favorites: Int!
+# }
+
+# type Comment {
+#   _id: String!
+#   username: String!
+#   avatar: String!
+#   likes: Int!
+# }
+
+# type Playlist {
+#   _id: String!
+#   playlistOwner: User!
+#   title: String!
+#   description: String!
+#   content: [Video!]
+# }
