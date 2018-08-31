@@ -7,6 +7,9 @@ import { mergeSchemas, makeExecutableSchema } from 'graphql-tools';
 import { createTypeormConnection } from './utils/createTypeormConnection';
 import { GraphQLSchema } from 'graphql';
 
+import * as Redis from 'ioredis';
+import { User } from './entity/User';
+
 export const startServer = async () => {
   const schemas: GraphQLSchema[] = [];
   const folders = fs.readdirSync(path.join(__dirname, './modules'));
@@ -18,7 +21,27 @@ export const startServer = async () => {
     schemas.push(makeExecutableSchema({ resolvers, typeDefs }));
   });
 
-  const server = new GraphQLServer({ schema: mergeSchemas({ schemas }) });
+  const redis = new Redis();
+
+  const server = new GraphQLServer({
+    schema: mergeSchemas({ schemas }),
+    context: ({ request }: any) => ({
+      redis,
+      url: request.protocal + '://' + request.get('host')
+    })
+  } as any);
+
+  server.express.get('/confirm/:id', async (req, res) => {
+    const { id } = req.params;
+    const userId = await redis.get(id);
+    if (userId) {
+      await User.update({ id: userId }, { confirmed: true });
+      res.send('ok');
+    } else {
+      res.send('invalid');
+    }
+  });
+
   await createTypeormConnection();
   const app = await server.start({
     port: process.env.NODE_ENV === 'test' ? 0 : 4000

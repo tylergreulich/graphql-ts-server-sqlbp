@@ -2,7 +2,6 @@ import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
-  BeforeInsert,
   BaseEntity
 } from 'typeorm';
 
@@ -18,4 +17,7 @@ export class User extends BaseEntity {
   // NOTE: You can't define the length yourself. Use 'varchar' for that.
   @Column('text')
   password: string;
+
+  @Column('boolean', { default: false })
+  confirmed: boolean;
 }
