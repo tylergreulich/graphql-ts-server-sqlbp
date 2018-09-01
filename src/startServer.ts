@@ -1,49 +1,45 @@
-import { importSchema } from 'graphql-import';
 import { GraphQLServer } from 'graphql-yoga';
-import * as path from 'path';
-import * as fs from 'fs';
-import { mergeSchemas, makeExecutableSchema } from 'graphql-tools';
-
+import * as session from 'express-session';
+import * as connectRedis from 'connect-redis';
 import { createTypeormConnection } from './utils/createTypeormConnection';
-import { GraphQLSchema } from 'graphql';
 
-import * as Redis from 'ioredis';
-import { User } from './entity/User';
+import { genSchema } from './utils/genSchema';
 
 export const startServer = async () => {
-  const schemas: GraphQLSchema[] = [];
-  const folders = fs.readdirSync(path.join(__dirname, './modules'));
-  folders.forEach(folder => {
-    const { resolvers } = require(`./modules/${folder}/resolvers`);
-    const typeDefs = importSchema(
-      path.join(__dirname, `./modules/${folder}/schema.graphql`)
-    );
-    schemas.push(makeExecutableSchema({ resolvers, typeDefs }));
-  });
-
-  const redis = new Redis();
+  const SESSION_SECRET = 'ajslkjalksjdfkl';
+  const RedisStore = connectRedis(session);
 
   const server = new GraphQLServer({
-    schema: mergeSchemas({ schemas }),
+    schema: genSchema(),
     context: ({ request }: any) => ({
-      redis,
-      url: request.protocal + '://' + request.get('host')
+      url: request.protocal + '://' + request.get('host'),
+      session: request.session
     })
   } as any);
 
-  server.express.get('/confirm/:id', async (req, res) => {
-    const { id } = req.params;
-    const userId = await redis.get(id);
-    if (userId) {
-      await User.update({ id: userId }, { confirmed: true });
-      res.send('ok');
-    } else {
-      res.send('invalid');
-    }
-  });
+  server.express.use(
+    session({
+      store: new RedisStore({}),
+      name: 'qid',
+      secret: SESSION_SECRET,
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // set to 'true' if in production for https
+        maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+      }
+    })
+  );
+
+  const cors = {
+    credentials: true,
+    origin: 'http://localhost:3000'
+  };
 
   await createTypeormConnection();
   const app = await server.start({
+    cors,
     port: process.env.NODE_ENV === 'test' ? 0 : 4000
   });
   console.log('Server is running on localhost:4000');

@@ -1,40 +1,33 @@
-// import { ResolverMap } from '../../types/graphql-utils';
-// import { GQL } from '../../types/schema';
-// import { User } from '../../entity/User';
+import { ResolverMap } from '../../types/graphql-utils';
+import { GQL } from '../../types/schema';
+import { User } from '../../entity/User';
+import * as bcrypt from 'bcryptjs';
+import { invalidLogin } from './errorMessages';
 
-// export const resolvers: ResolverMap = {
-//   Query: {
-//     bye: () => 'bye'
-//   },
-//   Mutation: {
-//     loginUser: async (
-//       _,
-//       { email, password }: GQL.IRegisterOnMutationArguments
-//     ) => {
-//       const userAlreadyExists = await User.findOne({
-//         where: { email },
-//         select: ['id']
-//       });
+export const resolvers: ResolverMap = {
+  Query: {
+    bye2: () => 'bye'
+  },
+  Mutation: {
+    loginUser: async (
+      _,
+      { email, password }: GQL.ILoginUserOnMutationArguments,
+      { session }
+    ) => {
+      const user = await User.findOne({
+        where: { email },
+        select: ['id']
+      });
 
-//       if (!userAlreadyExists) {
-//         return [
-//           {
-//             path: 'email',
-//             message: 'User does not exist'
-//           }
-//         ];
-//       }
+      if (!user) return invalidLogin('email', 'Email is invalid');
 
-//       try {
-//         const hashedPassword = await bcrypt.hash(password, 10);
-//         User.create({
-//           email,
-//           password: hashedPassword
-//         }).save();
-//         return null;
-//       } catch (error) {
-//         return error;
-//       }
-//     }
-//   }
-// };
+      const isValid = await bcrypt.compare(password, user.password);
+
+      if (!isValid) return invalidLogin('password', 'Password is invalid');
+
+      session.userId = user.id;
+
+      return null;
+    }
+  }
+};
